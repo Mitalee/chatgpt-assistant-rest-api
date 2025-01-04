@@ -96,7 +96,14 @@ const Chat = ({
         }),
       }
     );
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("API Error Response:", errorData);
+      throw new Error("Failed to fetch message");
+    }
     const stream = AssistantStream.fromReadableStream(response.body);
+    // console.log("Handling Readable stream from SendMessage:", stream);
+    console.log("Calling HANDLEREADABLE STREAM");
     handleReadableStream(stream);
   };
 
@@ -115,6 +122,7 @@ const Chat = ({
       }
     );
     const stream = AssistantStream.fromReadableStream(response.body);
+    
     handleReadableStream(stream);
   };
 
@@ -140,6 +148,7 @@ const Chat = ({
 
   // textDelta - append text to last assistant message
   const handleTextDelta = (delta) => {
+    console.log("Text Delta Received:", delta.value);
     if (delta.value != null) {
       appendToLastMessage(delta.value);
     };
@@ -167,15 +176,29 @@ const Chat = ({
   };
 
   // handleRequiresAction - handle function call
+  /**
+   * 
+   * @param event 
+   * if anything other than text, image or code interpreter (Which are already handled above) 
+   * is returned,
+   * this function will be called to run the custom tool call. 
+   * 
+   * This function is called from handleReadableStream function.
+   */
   const handleRequiresAction = async (
     event: AssistantStreamEvent.ThreadRunRequiresAction
   ) => {
     const runId = event.data.id;
+    
     const toolCalls = event.data.required_action.submit_tool_outputs.tool_calls;
+    //Logging what custom function calls are detected
+    console.log("Function Calls Detected:", toolCalls);
     // loop over tool calls and call function handler
     const toolCallOutputs = await Promise.all(
       toolCalls.map(async (toolCall) => {
+        console.log("Invoking Function Handler for:", toolCall);
         const result = await functionCallHandler(toolCall);
+        console.log("Function Call Result:", result);
         return { output: result, tool_call_id: toolCall.id };
       })
     );
@@ -187,11 +210,33 @@ const Chat = ({
   const handleRunCompleted = () => {
     setInputDisabled(false);
   };
-
+  
+  /**
+   * 
+   * This is the function that understands whether the response stream 
+   * is a text, image, or code interpreter. It then calls the appropriate
+   * handler function to process the response.
+   * 
+   */
   const handleReadableStream = (stream: AssistantStream) => {
+
+    console.log("Handling readable stream...");
     // messages
-    stream.on("textCreated", handleTextCreated);
-    stream.on("textDelta", handleTextDelta);
+    // stream.on("textCreated", handleTextCreated);
+    // stream.on("textDelta", handleTextDelta);
+    
+    
+    // Listen for text generation (delta chunks)
+    stream.on("textDelta", (delta) => {
+      console.log("Text Delta Received:", delta);
+      handleTextDelta(delta);
+    });
+
+    // Listen for completed text blocks
+    stream.on("textCreated", (text) => {
+      console.log("Full Text Created:", text);
+      handleTextCreated();
+    });
 
     // image
     stream.on("imageFileDone", handleImageFileDone);
@@ -202,9 +247,15 @@ const Chat = ({
 
     // events without helpers yet (e.g. requires_action and run.done)
     stream.on("event", (event) => {
-      if (event.event === "thread.run.requires_action")
+      console.log("Stream Event Received:", event);
+      if (event.event === "thread.run.requires_action") {
+        console.log("Requires Action Event:", event);
         handleRequiresAction(event);
-      if (event.event === "thread.run.completed") handleRunCompleted();
+      }
+      if (event.event === "thread.run.completed") {
+        console.log("Run Completed Event:", event);
+        handleRunCompleted();
+      }
     });
   };
 

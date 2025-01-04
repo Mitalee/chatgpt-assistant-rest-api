@@ -11,9 +11,11 @@ const FunctionCalling = () => {
   const [weatherData, setWeatherData] = useState({});
 
   const functionCallHandler = async (call) => {
+    console.log("Function call handler invoked in ALL page.tsx.");
     if (call?.function?.name !== "get_weather") return;
     const args = JSON.parse(call.function.arguments);
-    const data = getWeather(args.location);
+    console.log("Calling getWeather... NOT GETWEATHERAPI");
+    const data = await getWeather(args.location);
     setWeatherData(data);
     return JSON.stringify(data);
   };
