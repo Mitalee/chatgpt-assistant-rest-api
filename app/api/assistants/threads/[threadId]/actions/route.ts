@@ -15,18 +15,18 @@ export async function POST(request, { params: { threadId } }) {
     { tool_outputs: toolCallOutputs }
   );
 
-  const reader = stream.toReadableStream().getReader();
-  const decoder = new TextDecoder();
+  // const reader = stream.toReadableStream().getReader();
+  // const decoder = new TextDecoder();
 
-  let log = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    const decoded = decoder.decode(value, { stream: true });
-    log += decoded;
-    // console.log("Stream Chunk from OpenAI (submit tool outputs):", decoded);
-  }
-  console.log("Full Response from OpenAI (submit tool outputs):", log);
-
+  // let log = "";
+  // while (true) {
+  //   const { done, value } = await reader.read();
+  //   if (done) break;
+  //   const decoded = decoder.decode(value, { stream: true });
+  //   log += decoded;
+  //   // console.log("Stream Chunk from OpenAI (submit tool outputs):", decoded);
+  // }
+  // console.log("Full Response from OpenAI (submit tool outputs):", log);
+  console.log("RETURNING RESPONSE TO submitActionResult in chat.tsx");
   return new Response(stream.toReadableStream());
 }

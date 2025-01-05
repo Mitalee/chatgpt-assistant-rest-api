@@ -19,15 +19,19 @@ const getWeather = (location) => {
 
 const getWeatherAPI = async (location: string) => {
   try {
-    const response = await fetch(`${BASE_URL}?location=${location}`);
+    const response = await fetch(`${BASE_URL}?location=${location}`, {
+      method: "GET",
+    });
     console.log("API Called with URL:", `${BASE_URL}?location=${location}`);
+
     if (!response.ok) {
+      console.error("API responded with error:", response.status);
       throw new Error("Failed to fetch weather data");
     }
 
     const data = await response.json();
+    console.log("Weather Data Received:", data);
 
-    // Assuming the API returns { location, temperature, conditions }
     return {
       location: data.location,
       temperature: data.temperature,
@@ -44,5 +48,6 @@ const getWeatherAPI = async (location: string) => {
     };
   }
 };
+
 
 export { getWeather, getWeatherAPI };

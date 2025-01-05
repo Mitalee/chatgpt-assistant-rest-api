@@ -77,37 +77,49 @@ const Chat = ({
   // create a new threadID when chat component created
   useEffect(() => {
     const createThread = async () => {
+      console.log("Creating new thread...");
       const res = await fetch(`/api/assistants/threads`, {
         method: "POST",
       });
       const data = await res.json();
+      console.log("New thread created with ID:", data.threadId);
       setThreadId(data.threadId);
     };
     createThread();
   }, []);
 
   const sendMessage = async (text) => {
-    const response = await fetch(
-      `/api/assistants/threads/${threadId}/messages`,
-      {
+    console.log("Sending Message to BACKEND threads/messages.routes.ts...");
+    try {
+      const response = await fetch(`/api/assistants/threads/${threadId}/messages`, {
         method: "POST",
-        body: JSON.stringify({
-          content: text,
-        }),
-      }
-    );
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("API Error Response:", errorData);
-      throw new Error("Failed to fetch message");
+        body: JSON.stringify({ content: text }),
+      });
+      console.log("Fetch successful.");
+      const stream = AssistantStream.fromReadableStream(response.body);
+      handleReadableStream(stream);
+    } catch (error) {
+      console.error("Fetch or stream error:", error);
     }
-    const stream = AssistantStream.fromReadableStream(response.body);
-    // console.log("Handling Readable stream from SendMessage:", stream);
-    console.log("Calling HANDLEREADABLE STREAM");
-    handleReadableStream(stream);
+    // const response = await fetch(
+    //   `/api/assistants/threads/${threadId}/messages`,
+    //   {
+    //     method: "POST",
+    //     body: JSON.stringify({
+    //       content: text,
+    //     }),
+    //   }
+    // );
+    // console.log("Received response for sendMessage:", response);
+    // console.log("PASSING the sendMessage Response to AssistantStream")
+    // const stream = AssistantStream.fromReadableStream(response.body);
+    // // console.log("Handling Readable stream from SendMessage:", stream);
+    // console.log("Calling HANDLEREADABLE STREAM IN SENDMESSAGE");
+    // handleReadableStream(stream);
   };
 
   const submitActionResult = async (runId, toolCallOutputs) => {
+    console.log("Preparing to AWAIT FETCH (submitActionResult) - submitting tool outputs...");
     const response = await fetch(
       `/api/assistants/threads/${threadId}/actions`,
       {
@@ -121,14 +133,17 @@ const Chat = ({
         }),
       }
     );
+    console.log("Received response for submitActionResult:", response);
+    console.log("PASSING the submitActionResult Response to AssistantStream")
     const stream = AssistantStream.fromReadableStream(response.body);
-    
+    console.log("Calling HANDLEREADABLE STREAM in SUBMITACTION RESULT");
     handleReadableStream(stream);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!userInput.trim()) return;
+    console.log("Send button triggered. Sending message...");
     sendMessage(userInput);
     setMessages((prevMessages) => [
       ...prevMessages,
@@ -220,11 +235,13 @@ const Chat = ({
    */
   const handleReadableStream = (stream: AssistantStream) => {
 
-    console.log("Handling readable stream...");
+    console.log("Handling readable stream from handleReadableStream...");
     // messages
     // stream.on("textCreated", handleTextCreated);
     // stream.on("textDelta", handleTextDelta);
-    
+    stream.on("event", (event) => {
+      console.log("Stream Event Received:", event);
+    })
     
     // Listen for text generation (delta chunks)
     stream.on("textDelta", (delta) => {

@@ -31,7 +31,8 @@ const FunctionCalling = () => {
     console.log("Function Arguments (location):", args);
     // Call the API and log that we're hitting the API
     console.log("Calling getWeatherAPI...");
-    const data = await getWeatherAPI(args.location);
+    // const data = await getWeatherAPI(args.location);
+    const data = getWeather(args.location);
     // Log the response from the API
     console.log("Weather API Response:", data);
     // Update the state with weather data

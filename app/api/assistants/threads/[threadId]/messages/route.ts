@@ -6,7 +6,8 @@ export const runtime = "nodejs";
 // Send a new message to a thread
 export async function POST(request, { params: { threadId } }) {
   const { content } = await request.json();
-
+  console.log("Submitting User Message to OpenAI via api/assistants/threads/%5BthreadId%5D/messages/route.ts:");
+  console.log("Received message for thread:", threadId, "Content:", content);
   // Send user message to OpenAI
   await openai.beta.threads.messages.create(threadId, {
     role: "user",
@@ -34,6 +35,7 @@ export async function POST(request, { params: { threadId } }) {
 
   // console.log("Full OpenAI Stream Response:", log);
 
+  console.log("RETURNING RESPONSE TO sendMESSAGE in chat.tsx");
   // Return the readable stream back to the frontend
   return new Response(stream.toReadableStream());
 }
